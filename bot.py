@@ -213,8 +213,12 @@ async def append(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def obtener_importe(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
+        MONTH, YEAR = datetime.now().strftime("%m"), datetime.now().strftime("%Y")
+        GRUPO = "Familia Culopocho"
         importe = float(update.message.text.replace(",","."))
         concepto = context.user_data.get("concepto", "concepto desconocido")
+        db = DbManagement(MONTH,YEAR)
+        db.nuevo_gasto(nombre=update.message.from_user.first_name, gasto=importe,concepto=concepto,month=MONTH,year=YEAR,grupo=GRUPO)
         await update.message.reply_text(f"✅ Gasto registrado:\nConcepto: {concepto}\nImporte: {importe}€")
         context.user_data["concepto"] = None
         return ConversationHandler.END
