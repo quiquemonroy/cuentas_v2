@@ -165,7 +165,7 @@ async def hacer_cuentas_4(update: Update, context: ContextTypes.DEFAULT_TYPE):
     MONTH, YEAR = datetime.now().strftime("%m"), datetime.now().strftime("%Y")
     GRUPO = "Familia Culopocho"
     db = DbManagement(MONTH, YEAR)
-    datos_gasto = db.obtener_datos_gasto(MONTH, YEAR,GRUPO)
+    datos_gasto = db.obtener_datos_gasto(MONTH, YEAR, GRUPO)
     # print(datos)
     gastos_por_usuario = {row: f'{datos_gasto["gastos_usuarios"][row]}€' for row in datos_gasto["gastos_usuarios"]}
     gastos_str = ""
@@ -175,8 +175,10 @@ async def hacer_cuentas_4(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for row in datos_gasto["se_debe_a"]:
         se_debe_str += f'{row[0]} ({row[1]}€)\n'
     deben_str = ""
-    for row in datos_gasto["deben"]:
-        deben_str += f'{row} debe {datos_gasto["deben"][row]}€\n'
+    deudas = db.calcular_deudas_detalladas(MONTH,YEAR, GRUPO)
+    print(deudas)
+    for row in deudas["deudas"]:
+        deben_str += f'{row[0]} debe a {row[1]} {row[2]}€\n'
     tabla_gastos = ""  # Inicio del bloque de código monoespaciado
     for usuario in datos_gasto["usuarios"]:
         datos = db.obtener_datos_por_nombre(MONTH, YEAR, usuario, GRUPO)
@@ -206,14 +208,52 @@ Debe:
 async def arreglar_cuentas_5(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    keyboard = [
+    MONTH, YEAR = datetime.now().strftime("%m"), datetime.now().strftime("%Y")
+    GRUPO = "Familia Culopocho"
+    nombre = update.effective_user.first_name
+    db = DbManagement(MONTH, YEAR)
+    datos_gasto = db.calcular_deudas_detalladas(MONTH,YEAR,GRUPO)
+    debes = ""
+    print(datos_gasto)
+    for row in datos_gasto["deudas"]:
+        if row[0] == nombre:
+            debes += f'{row[2]}€ a {row[1]}\n'
+    if debes:
+        texto = f'Debes:\n{debes}\n¿Quieres apañar las cuentas?, dale a sí, sólo si ya has hecho BIZUM, transferencia o lo que sea '
+        keyboard = [[
+            InlineKeyboardButton("Sip, ya he hecho BIZUM", callback_data=str(THREE))
+        ],
+            [
+                InlineKeyboardButton("Nop", callback_data=str(ONE)),
+                InlineKeyboardButton("Salir", callback_data=str(TWO)),
+            ],
+        ]
+    else:
+        texto = "No debes nada!"
+        keyboard = [
+            [
+                InlineKeyboardButton("Menu", callback_data=str(ONE)),
+                InlineKeyboardButton("Salir", callback_data=str(TWO)),
+            ],
+        ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.edit_message_text(text=texto, reply_markup=reply_markup)
+    return END_ROUTES
+
+
+async def confirmar_pago(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    keyboard = [[
+        InlineKeyboardButton("Eso he hecho, justo.", callback_data=str(THREE))
+    ],
         [
-            InlineKeyboardButton("Volver al menu", callback_data=str(ONE)),
+            InlineKeyboardButton("Nop", callback_data=str(ONE)),
             InlineKeyboardButton("Salir", callback_data=str(TWO)),
         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    texto = """Quieres arreglar las cuentas??"""
+    texto = """Quieres apañar las cuentas, dale a sí, sólo si ya has hecho BIZUM, transferencia o lo que sea"""
     await query.edit_message_text(text=texto, parse_mode="MarkdownV2", reply_markup=reply_markup)
     return END_ROUTES
 
@@ -246,7 +286,8 @@ async def grabar_importe_concepto(update: Update, context: ContextTypes.DEFAULT_
                        year=YEAR, grupo=GRUPO)
         await update.message.reply_text(f"✅ Gasto registrado:\nConcepto: {concepto}\nImporte: {importe}€")
         context.user_data["concepto"] = None
-        logger.info("Nuevo gasto registrado de %s (id:%s): %s %s€", update.message.from_user.first_name, update.message.from_user.id,concepto,importe)
+        logger.info("Nuevo gasto registrado de %s (id:%s): %s %s€", update.message.from_user.first_name,
+                    update.message.from_user.id, concepto, importe)
         return ConversationHandler.END
     except ValueError:
         await update.message.reply_text(f"Por favor, introduce un numero válido")

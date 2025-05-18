@@ -206,6 +206,71 @@ class DbManagement:
         except TypeError:
             print("No hay datos suficientes aún para hacer esto.")
 
+    def calcular_deudas_detalladas(self, month, year, grupo):
+        """
+        Calcula las deudas específicas entre miembros del grupo.
+
+        Args:
+            month (str): Mes a consultar
+            year (str): Año a consultar
+            grupo (str): Nombre del grupo
+
+        Returns:
+            dict: Diccionario con:
+                - deudas: Lista de tuplas (deudor, acreedor, cantidad)
+                - resumen: Resumen de balances
+        """
+        datos = self.obtener_datos_gasto(month, year, grupo)
+
+        if not datos["usuarios"]:
+            return {"error": "No hay datos para este grupo/mes"}
+
+        # Crear listas de deudores y acreedores
+        deudores = []
+        acreedores = []
+
+        for usuario in datos["usuarios"]:
+            balance = datos["gastos_usuarios"][usuario] - datos["gasto_esperado"]
+            if balance < -0.5:  # Deudor (gastó menos de lo esperado)
+                deudores.append((usuario, -balance))
+            elif balance > 0.5:  # Acreedor (gastó más de lo esperado)
+                acreedores.append((usuario, balance))
+
+        # Ordenar de mayor a menor
+        deudores.sort(key=lambda x: x[1], reverse=True)
+        acreedores.sort(key=lambda x: x[1], reverse=True)
+
+        # Calcular deudas específicas
+        deudas = []
+        i = j = 0
+
+        while i < len(deudores) and j < len(acreedores):
+            deudor, cantidad_deudor = deudores[i]
+            acreedor, cantidad_acreedor = acreedores[j]
+
+            cantidad_transferir = min(cantidad_deudor, cantidad_acreedor)
+
+            deudas.append((deudor, acreedor, round(cantidad_transferir, 1)))
+
+            # Actualizar cantidades restantes
+            deudores[i] = (deudor, cantidad_deudor - cantidad_transferir)
+            acreedores[j] = (acreedor, cantidad_acreedor - cantidad_transferir)
+
+            if deudores[i][1] < 0.1:  # Si ya pagó todo
+                i += 1
+            if acreedores[j][1] < 0.1:  # Si ya recibió todo
+                j += 1
+
+        return {
+            "deudas": deudas,
+            "resumen": {
+                "gasto_total": datos["suma_total"],
+                "gasto_promedio": datos["gasto_esperado"],
+                "balances": {usuario: datos["gastos_usuarios"][usuario] - datos["gasto_esperado"]
+                             for usuario in datos["usuarios"]}
+            }
+        }
+
 
 if __name__ == "__main__":
     MONTH, YEAR = datetime.now().strftime("%m"), datetime.now().strftime("%Y")
@@ -215,7 +280,7 @@ if __name__ == "__main__":
     app.db = sqlite3.connect('cuentas.db')
     app.c = app.db.cursor()
 
-    # app.nuevo_gasto("Esti", 123.53, "cosas", month=MONTH, year=YEAR, grupo=GRUPO)
+    # app.nuevo_gasto("Eugenia", 12223.53, "noseque", month=MONTH, year=YEAR, grupo=GRUPO)
     # print(app.obtener_datos_por_nombre(month=MONTH, year=YEAR, usuario="eugenia", grupo=GRUPO))
     # print(app.gasto_total_mensual(month=MONTH, year=YEAR, usuario="sagra", grupo=GRUPO))
     # print(app.obtener_datos_gasto(month=MONTH,year=YEAR, grupo= GRUPO))
