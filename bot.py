@@ -8,7 +8,7 @@ from telegram.ext import (ApplicationBuilder,
                           filters, CallbackQueryHandler,
                           ConversationHandler
                           )
-from secrets import TELEGRAM_TOKEN, USUARIOS,ESTI_ID,QUIQUE_ID
+from secrets import TELEGRAM_TOKEN, USUARIOS, ESTI_ID, QUIQUE_ID
 from DB_MANAGEMENT_DOC import DbManagement
 
 logging.basicConfig(
@@ -38,14 +38,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.from_user.id in USUARIOS:
         MONTH, YEAR = datetime.now().strftime("%m"), datetime.now().strftime("%Y")
         GRUPO = "Familia Culopocho"
-        db = DbManagement(MONTH,YEAR)
-        datos = db.obtener_datos_gasto(MONTH,YEAR,GRUPO)
+        db = DbManagement(MONTH, YEAR)
+        datos = db.obtener_datos_gasto(MONTH, YEAR, GRUPO)
         if update.effective_user.first_name not in datos["usuarios"]:
-            db.nuevo_gasto(update.effective_user.first_name,0,"añadido",MONTH,YEAR,GRUPO)
+            db.nuevo_gasto(update.effective_user.first_name, 0, "añadido", MONTH, YEAR, GRUPO)
 
         keyboard = [
             [
-                InlineKeyboardButton("🆘 Ayuda", callback_data=str(TWO)),
+                InlineKeyboardButton("ℹ️ INFO", callback_data=str(TWO)),
                 InlineKeyboardButton("⚙️ Panel de control", callback_data=str(THREE)),
                 InlineKeyboardButton("📴 Salir", callback_data=str(SIX))
             ],
@@ -54,21 +54,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("💰 Apañar cuentas", callback_data=str(FIVE))]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        menu = """💸💸*CUENTAS FAMILIARES*💸💸
-    
-    \-\-Usa el menú para elegir qué hacer\.\-\-
-    
-    🔴Si has gastado algo de dinero y quieres apuntarlo, haz click en Registrar gasto\.
-    
-    🔴Hacer cuentas muestra un resumen de lo que hemos gastado cada una este mes\.
-    
-    🔴Apañar cuentas sirve para registrar cuando ya has hecho bizum o algo así\.
-    
-    🔴Ver ayuda muestra la ayuda\.
-    
-    🔴Panel de control\."""
-
-        await update.message.reply_text(text=menu, parse_mode="MarkdownV2", reply_markup=reply_markup)
+        menu = """💸💸CUENTAS FAMILIARES💸💸"""
+        await update.message.reply_text(text=menu, reply_markup=reply_markup)
         return START_ROUTES
     else:
         await update.message.reply_text(text="Usuario no autorizado", parse_mode="MarkdownV2")
@@ -79,7 +66,7 @@ async def start_over(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     keyboard = [
         [
-            InlineKeyboardButton("🆘 Ayuda", callback_data=str(TWO)),
+            InlineKeyboardButton("ℹ️ INFO", callback_data=str(TWO)),
             InlineKeyboardButton("⚙️ Panel de control", callback_data=str(THREE)),
             InlineKeyboardButton("📴 Salir", callback_data=str(SIX))
         ],
@@ -88,21 +75,8 @@ async def start_over(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("💰 Apañar cuentas", callback_data=str(FIVE))]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    menu = """💸💸*CUENTAS FAMILIARES*💸💸
-
-        \-\-Usa el menú para elegir qué hacer\.\-\-
-
-        🔴Si has gastado algo de dinero y quieres apuntarlo, haz click en Registrar gasto\.
-
-        🔴Hacer cuentas muestra un resumen de lo que hemos gastado cada una este mes\.
-
-        🔴Apañar cuentas sirve para registrar cuando ya has hecho bizum o algo así\.
-
-        🔴Ver ayuda muestra la ayuda\.
-
-        🔴Panel de control\."""
-
-    await query.edit_message_text(text=menu, parse_mode="MarkdownV2", reply_markup=reply_markup)
+    menu = """💸💸CUENTAS FAMILIARES💸💸"""
+    await query.edit_message_text(text=menu, reply_markup=reply_markup)
     return START_ROUTES
 
 
@@ -184,7 +158,7 @@ async def hacer_cuentas_4(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for row in datos_gasto["se_debe_a"]:
         se_debe_str += f'{row[0]} ({row[1]}€)\n'
     deben_str = ""
-    deudas = db.calcular_deudas_detalladas(MONTH,YEAR, GRUPO)
+    deudas = db.calcular_deudas_detalladas(MONTH, YEAR, GRUPO)
     # print(deudas)
     for row in deudas["deudas"]:
         deben_str += f'{row[0]} debe a {row[1]} {row[2]}€\n'
@@ -221,7 +195,7 @@ async def arreglar_cuentas_5(update: Update, context: ContextTypes.DEFAULT_TYPE)
     GRUPO = "Familia Culopocho"
     nombre = update.effective_user.first_name
     db = DbManagement(MONTH, YEAR)
-    datos_gasto = db.calcular_deudas_detalladas(MONTH,YEAR,GRUPO)
+    datos_gasto = db.calcular_deudas_detalladas(MONTH, YEAR, GRUPO)
     debes = ""
     # print(datos_gasto)
     for row in datos_gasto["deudas"]:
@@ -257,11 +231,11 @@ async def confirmar_pago(update: Update, context: ContextTypes.DEFAULT_TYPE):
     GRUPO = "Familia Culopocho"
     nombre = update.effective_user.first_name
     db = DbManagement(MONTH, YEAR)
-    db.arreglar_cuentas(MONTH, YEAR, nombre,GRUPO)
+    db.arreglar_cuentas(MONTH, YEAR, nombre, GRUPO)
     if update.effective_user.id == QUIQUE_ID:
-        context.bot.send_message(ESTI_ID,text=f"{nombre} acaba de arreglar las cuentas")
+        context.bot.send_message(ESTI_ID, text=f"{nombre} acaba de arreglar las cuentas")
     if update.effective_user.id == ESTI_ID:
-        context.bot.send_message(QUIQUE_ID,text=f"{nombre} acaba de arreglar las cuentas")
+        context.bot.send_message(QUIQUE_ID, text=f"{nombre} acaba de arreglar las cuentas")
     keyboard = [
         [
             InlineKeyboardButton("Menú", callback_data=str(ONE)),
@@ -286,7 +260,7 @@ async def obtener_importe_desde_concepto(update: Update, context: ContextTypes.D
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     texto = f"""Ok, ¿cuánto te has gastado?"""
-    await query.edit_message_text(text=texto,reply_markup=reply_markup)
+    await query.edit_message_text(text=texto, reply_markup=reply_markup)
     # context.user_data['concepto'] = None
     return GET_IMPORTE
 
@@ -304,10 +278,12 @@ async def grabar_importe_concepto(update: Update, context: ContextTypes.DEFAULT_
         context.user_data["concepto"] = None
         logger.info("Nuevo gasto registrado de %s (id:%s): %s %s€", update.message.from_user.first_name,
                     update.message.from_user.id, concepto, importe)
-        if update.message.from_user.id == QUIQUE_ID: # quique registra un gasto
-            context.bot.send_message(chat_id=ESTI_ID,text=f"{update.message.from_user.first_name} se ha gastado {importe}€ en {concepto}")
-        if update.message.from_user.id == ESTI_ID: # esti registra un gasto
-            context.bot.send_message(chat_id=QUIQUE_ID,text=f"{update.message.from_user.first_name} se ha gastado {importe}€ en {concepto}")
+        if update.message.from_user.id == QUIQUE_ID:  # quique registra un gasto
+            context.bot.send_message(chat_id=ESTI_ID,
+                                     text=f"{update.message.from_user.first_name} se ha gastado {importe}€ en {concepto}")
+        if update.message.from_user.id == ESTI_ID:  # esti registra un gasto
+            context.bot.send_message(chat_id=QUIQUE_ID,
+                                     text=f"{update.message.from_user.first_name} se ha gastado {importe}€ en {concepto}")
         return ConversationHandler.END
     except ValueError:
         await update.message.reply_text(f"Por favor, introduce un numero válido")
@@ -387,13 +363,18 @@ async def obtener_concepto(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def salir(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    chat_id = update.effective_chat.id
     await query.edit_message_text(text="Hasta luego!")
+    try:
+        await context.bot.delete_message(chat_id=chat_id, message_id=query.message.message_id)
+    except Exception as e:
+        logger.error(f"Error al borrar mensaje: {e}")
     return ConversationHandler.END
 
 
 def main():
     MONTH, YEAR = datetime.now().strftime("%m"), datetime.now().strftime("%Y")
-    db = DbManagement(MONTH,YEAR)
+    db = DbManagement(MONTH, YEAR)
     application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
     conv_handler = ConversationHandler(
