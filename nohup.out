@@ -1,0 +1,5 @@
+/home/quique/scripts/bot_telegram/cuentas_v2/bot.py:385: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+  conv_handler = ConversationHandler(
+2025-05-18 18:50:18,666 - telegram.ext.Application - INFO - Application started
+2025-05-18 18:52:21,392 - telegram.ext.Application - INFO - Application is stopping. This might take a moment.
+2025-05-18 18:52:21,393 - telegram.ext.Application - INFO - Application.stop() complete
