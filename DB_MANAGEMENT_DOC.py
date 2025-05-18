@@ -40,7 +40,8 @@ class DbManagement:
                                                         NOMBRE TEXT,
                                                         GASTO FLOAT,
                                                         CONCEPTO TEXT,
-                                                        GRUPO TEXT);''')
+                                                        GRUPO TEXT,
+                                                        TIMESTAMP);''')
         self.db.commit()
 
     def nuevo_gasto(self, nombre, gasto, concepto, month, year, grupo):
@@ -58,10 +59,12 @@ class DbManagement:
             None, pero imprime confirmación del registro
         """
         nombre = nombre.strip().title()  # Normaliza formato del nombre
+        timestamp = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         self.c.execute(
-            f'INSERT INTO cuentas_{month}_{year} (NOMBRE,GASTO,CONCEPTO,GRUPO) VALUES ("{nombre}", {gasto}, "{concepto}", "{grupo}")')
+            f'INSERT INTO cuentas_{month}_{year} (NOMBRE,GASTO,CONCEPTO,GRUPO,TIMESTAMP) '
+            f'VALUES (?,?,?,?,?)',(nombre,gasto,concepto,grupo,timestamp))
         self.db.commit()
-        print(f"Gasto añadido en el grupo {grupo}, el mes {month} de {year}: {nombre} - {gasto}€ - {concepto}")
+        # print(f"Gasto añadido en el grupo {grupo}, el mes {month} de {year}: {nombre} - {gasto}€ - {concepto}")
 
     def obtener_datos_por_nombre(self, month, year, usuario, grupo):
         """
@@ -81,13 +84,13 @@ class DbManagement:
         """
         usuario = usuario.strip().title()
         self.c.execute(
-            f'SELECT GASTO,CONCEPTO,GRUPO FROM cuentas_{month}_{year} WHERE NOMBRE="{usuario}" and GRUPO="{grupo}"')
+            f'SELECT GASTO,CONCEPTO,GRUPO,TIMESTAMP FROM cuentas_{month}_{year} WHERE NOMBRE="{usuario}" and GRUPO="{grupo}"')
         gastos_usuario = self.c.fetchall()
         total = 0
         gastos = {"name": usuario,
                   "mes": month,
                   "año": year,
-                  "gastos": [(gasto[0], gasto[1]) for gasto in gastos_usuario],
+                  "gastos": [(gasto[0], gasto[1], gasto[3]) for gasto in gastos_usuario],
                   "total gasto": round(sum([gasto[0] for gasto in gastos_usuario]), 1),
                   "grupo": set([grupo[2] for grupo in gastos_usuario])
                   }
@@ -142,14 +145,14 @@ class DbManagement:
         se_debe_a = []
 
         # Calcula gasto total por usuario y suma grupal
-        for usuario in lista_usuarios:
+        for usuario in lista_usuarios:  # gasto total del grupo para el mes dado
             gastos[usuario] = self.gasto_total_mensual(month, year, usuario, grupo)
             suma += self.gasto_total_mensual(month, year, usuario, grupo)
 
         try:
             gasto_esperado = round(suma / len(lista_usuarios), 1)
         except ZeroDivisionError:
-            return "No hay datos suficientes aún para hacer esto."
+            gasto_esperado = 0
 
         # Determina balances individuales
         for usuario in lista_usuarios:
@@ -164,7 +167,8 @@ class DbManagement:
             "gastos_usuarios": gastos,
             "deben": deben,
             "se_debe_a": se_debe_a,
-            "gasto_esperado": gasto_esperado
+            "gasto_esperado": gasto_esperado,
+            "usuarios" : lista_usuarios
         }
 
     def arreglar_cuentas(self, month, year, usuario, grupo):
@@ -211,7 +215,7 @@ if __name__ == "__main__":
     app.db = sqlite3.connect('cuentas.db')
     app.c = app.db.cursor()
 
-    # app.nuevo_gasto("eugenia", 13.53, "cosas", month=MONTH, year=YEAR, grupo=GRUPO)
+    # app.nuevo_gasto("Esti", 123.53, "cosas", month=MONTH, year=YEAR, grupo=GRUPO)
     # print(app.obtener_datos_por_nombre(month=MONTH, year=YEAR, usuario="eugenia", grupo=GRUPO))
     # print(app.gasto_total_mensual(month=MONTH, year=YEAR, usuario="sagra", grupo=GRUPO))
     # print(app.obtener_datos_gasto(month=MONTH,year=YEAR, grupo= GRUPO))
