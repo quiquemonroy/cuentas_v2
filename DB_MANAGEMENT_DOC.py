@@ -194,10 +194,10 @@ class DbManagement:
             if usuario in datos["deben"]:
                 cantidad_debida = datos["deben"][usuario]
                 por_acreedor = round((cantidad_debida / len(datos["se_debe_a"])), 1) * -1
-                concepto = f'INGRESO DE {usuario}'
+                concepto = f'de {usuario}'
 
                 # Registra ajustes
-                self.nuevo_gasto(usuario, cantidad_debida, "ARREGLAR CUENTAS", month, year, grupo)
+                self.nuevo_gasto(usuario, cantidad_debida, "Deudas", month, year, grupo)
                 for acreedor in datos["se_debe_a"]:
                     self.nuevo_gasto(acreedor[0], por_acreedor, concepto, month, year, grupo)
                 print("Gasto apañado")
@@ -280,13 +280,15 @@ if __name__ == "__main__":
     app.db = sqlite3.connect('cuentas.db')
     app.c = app.db.cursor()
 
-    # app.nuevo_gasto("Eugenia", 12223.53, "noseque", month=MONTH, year=YEAR, grupo=GRUPO)
-    # print(app.obtener_datos_por_nombre(month=MONTH, year=YEAR, usuario="eugenia", grupo=GRUPO))
+    # app.nuevo_gasto("Eugenia", 12223.53, "noseque", month="04", year=YEAR, grupo=GRUPO)
+    # print(app.obtener_datos_por_nombre(month="04", year=YEAR, usuario="Eugenia", grupo=GRUPO))
     # print(app.gasto_total_mensual(month=MONTH, year=YEAR, usuario="sagra", grupo=GRUPO))
-    # print(app.obtener_datos_gasto(month=MONTH,year=YEAR, grupo= GRUPO))
+    print(app.obtener_datos_gasto(month=MONTH,year=YEAR, grupo= GRUPO))
     # app.arreglar_cuentas(month=MONTH,year=YEAR,usuario="Quique",grupo=GRUPO)
     # user = app.obtener_datos_por_nombre(month=MONTH, year=YEAR, usuario="eugenia", grupo=GRUPO)
     # print(user)
     # print(user.get("grupos"))
+    datos = app.obtener_datos_gasto(month=MONTH,year=YEAR, grupo= GRUPO)
+    print(datos["usuarios"])
 
     app.db.close()
