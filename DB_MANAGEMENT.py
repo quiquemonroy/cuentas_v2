@@ -1,12 +1,12 @@
 import sqlite3
 from datetime import datetime
-from token import DB_LINK
+from secrets import DB_LINK
 
 NOW = f'cuentas_{datetime.now().strftime("%m%Y")}'
 GRUPO = "Familia Culopocho"
 
 
-class dbManagement:
+class DbManagement:
     """
     Clase que hace la gestión de toda la base de datos.
     Si no existe la base de datos cuentas, crea la base de datos.
@@ -20,18 +20,18 @@ class dbManagement:
          - Apaña las cuantas.
 
     """
-    def __init__(self):
+    def __init__(self, month):
         # conectar a sqlite3
         self.db = DB_LINK
         self.c = self.db.cursor()
-        self.c.execute(f'''CREATE TABLE IF NOT EXISTS {NOW} (
+        self.c.execute(f'''CREATE TABLE IF NOT EXISTS {month} (
                                                         NOMBRE TEXT,
                                                         GASTO FLOAT,
                                                         CONCEPTO TEXT,
                                                         GRUPO TEXT);''')
         self.db.commit()
 
-    ## añadir gasto
+    # añadir gasto
     def nuevo_gasto(self, nombre, gasto, concepto, mes, grupo):
         nombre = nombre.strip().title()
         self.c.execute(
@@ -106,7 +106,7 @@ class dbManagement:
 
 if __name__ == "__main__":
     # conectar a sqlite3
-    app = dbManagement()
+    app = DbManagement("tabla5")
     app.db = sqlite3.connect('cuentas.db')
     app.c = app.db.cursor()
 
