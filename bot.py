@@ -115,7 +115,22 @@ async def ayuda_2(update: Update, context: ContextTypes.DEFAULT_TYPE):
         InlineKeyboardButton("Salir", callback_data=str(TWO))
     ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    texto = """ESTA ES LA AYUDA \(no ayuda mucho, la verdad\)"""
+    texto = """ℹ️ Información del Bot de Gastos Familiares ℹ️
+
+    Hola\! Este bot nos ayuda a llevar un control sencillo de nuestros gastos compartidos\.
+
+    ¿Qué puedes hacer\?\:
+    \- 📝 Registrar gastos comunes \(supermercado, recibos, actividades\.\.\.\)
+    \- 💰 Revisar el balance mensual
+    \- 📊 Consultar quién ha pagado qué
+    \- 🔄 Ajustar las cuentas cuando se realice un pago
+
+    \*Instrucciones básicas\:
+    1\) Registra tus gastos cuando hagas un pago común
+    2\) Consulta periódicamente el resumen
+    3\) Marca como pagado cuando saldes una deuda
+
+    Los datos se organizan por meses y siempre están disponibles para consulta\."""
     await query.edit_message_text(text=texto, parse_mode="MarkdownV2", reply_markup=reply_markup)
     return END_ROUTES
 
