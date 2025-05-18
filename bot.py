@@ -162,8 +162,30 @@ async def hacer_cuentas_4(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineKeyboardButton("Salir", callback_data=str(TWO))
         ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    texto = """Estas son las cuentas: debes dinero"""
-    await query.edit_message_text(text=texto, parse_mode="MarkdownV2", reply_markup=reply_markup)
+    MONTH, YEAR = datetime.now().strftime("%m"), datetime.now().strftime("%Y")
+    GRUPO = "Familia Culopocho"
+    db = DbManagement(MONTH, YEAR)
+    datos = db.obtener_datos_gasto(MONTH, YEAR,GRUPO)
+    print(datos)
+    gastos_por_usuario = {row: f'{datos["gastos_usuarios"][row]}€' for row in datos["gastos_usuarios"]}
+    gastos_str = ""
+    for row in datos["gastos_usuarios"]:
+        gastos_str += f'{row} : {datos["gastos_usuarios"][row]}€\n'
+    se_debe_str = ""
+    for row in datos["se_debe_a"]:
+        se_debe_str += f'{row[0]} ({row[1]}€)\n'
+    deben_str = ""
+    for row in datos["deben"]:
+        deben_str += f'{row} debe {datos["deben"][row]}€\n'
+
+    texto = f"""Estas son las cuentas del mes {MONTH}-{YEAR}: 
+{gastos_str}
+Gasto esperado por cada persona: {datos['gasto_esperado']}€
+Se bebe a:
+{se_debe_str}
+Debe:
+{deben_str}"""
+    await query.edit_message_text(text=texto, reply_markup=reply_markup)
     return ARREGLAR_CUENTAS
 
 
