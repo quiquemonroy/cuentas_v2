@@ -62,7 +62,7 @@ El bot envía notificaciones automáticas:
 
 ## Ejecución
 ```bash
-python nombre_del_archivo.py
+python3 main.py
 ```
 
 ## Notas
