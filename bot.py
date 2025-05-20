@@ -247,10 +247,10 @@ async def confirmar_pago(update: Update, context: ContextTypes.DEFAULT_TYPE):
     nombre = update.effective_user.first_name
     db = DbManagement(MONTH, YEAR)
     db.arreglar_cuentas(MONTH, YEAR, nombre, GRUPO)
-    if update.effective_user.id == QUIQUE_ID:
-        context.bot.send_message(ESTI_ID, text=f"{nombre} acaba de arreglar las cuentas")
-    if update.effective_user.id == ESTI_ID:
-        context.bot.send_message(QUIQUE_ID, text=f"{nombre} acaba de arreglar las cuentas")
+    if update.effective_user.id == str(QUIQUE_ID):
+        context.bot.send_message(str(ESTI_ID), text=f"{nombre} acaba de arreglar las cuentas")
+    if update.effective_user.id == str(ESTI_ID):
+        context.bot.send_message(str(QUIQUE_ID), text=f"{nombre} acaba de arreglar las cuentas")
     keyboard = [
         [
             InlineKeyboardButton("Menú", callback_data=str(ONE)),
@@ -316,11 +316,11 @@ async def grabar_concepto_desde_importe(update: Update, context: ContextTypes.DE
                                    text=f"✅ Gasto registrado:\nConcepto: {concepto}\nImporte: {importe}€")
     logger.info("Nuevo gasto registrado de %s (id:%s): %s %s€", update.effective_user.first_name,
                 update.effective_user.id, concepto, importe)
-    if update.effective_user.id == QUIQUE_ID:  # quique registra un gasto
-        context.bot.send_message(chat_id=ESTI_ID,
+    if update.effective_user.id == str(QUIQUE_ID):  # quique registra un gasto
+        context.bot.send_message(chat_id=str(ESTI_ID),
                                  text=f"{update.effective_user.first_name} se ha gastado {importe}€ en {concepto}")
-    if update.effective_user.id == ESTI_ID:  # esti registra un gasto
-        context.bot.send_message(chat_id=QUIQUE_ID,
+    if update.effective_user.id == str(ESTI_ID):  # esti registra un gasto
+        context.bot.send_message(chat_id=str(QUIQUE_ID),
                                  text=f"{update.effective_user.first_name} se ha gastado {importe}€ en {concepto}")
 
     context.user_data["importe"] = None
