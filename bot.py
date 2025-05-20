@@ -58,6 +58,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(text=menu, reply_markup=reply_markup)
         return START_ROUTES
     else:
+        print()
         await update.message.reply_text(text="Usuario no autorizado", parse_mode="MarkdownV2")
 
 
@@ -247,10 +248,10 @@ async def confirmar_pago(update: Update, context: ContextTypes.DEFAULT_TYPE):
     nombre = update.effective_user.first_name
     db = DbManagement(MONTH, YEAR)
     db.arreglar_cuentas(MONTH, YEAR, nombre, GRUPO)
-    if update.effective_user.id == str(QUIQUE_ID):
-        context.bot.send_message(str(ESTI_ID), text=f"{nombre} acaba de arreglar las cuentas")
-    if update.effective_user.id == str(ESTI_ID):
-        context.bot.send_message(str(QUIQUE_ID), text=f"{nombre} acaba de arreglar las cuentas")
+    if update.effective_user.id == QUIQUE_ID:
+        await context.bot.send_message(ESTI_ID, text=f"{nombre} acaba de arreglar las cuentas")
+    if update.effective_user.id == ESTI_ID:
+        await context.bot.send_message(QUIQUE_ID, text=f"{nombre} acaba de arreglar las cuentas")
     keyboard = [
         [
             InlineKeyboardButton("Menú", callback_data=str(ONE)),
@@ -290,15 +291,16 @@ async def grabar_importe_concepto(update: Update, context: ContextTypes.DEFAULT_
         db.nuevo_gasto(nombre=update.message.from_user.first_name, gasto=importe, concepto=concepto, month=MONTH,
                        year=YEAR, grupo=GRUPO)
         await update.message.reply_text(f"✅ Gasto registrado:\nConcepto: {concepto}\nImporte: {importe}€")
-        context.user_data["concepto"] = None
+
         logger.info("Nuevo gasto registrado de %s (id:%s): %s %s€", update.message.from_user.first_name,
                     update.message.from_user.id, concepto, importe)
-        if update.message.from_user.id == str(QUIQUE_ID):  # quique registra un gasto
-            context.bot.send_message(chat_id=str(ESTI_ID),
-                                     text=f"{update.message.from_user.first_name} se ha gastado {importe}€ en {concepto}")
-        if update.message.from_user.id == str(ESTI_ID):  # esti registra un gasto
-            context.bot.send_message(chat_id=str(QUIQUE_ID),
-                                     text=f"{update.message.from_user.first_name} se ha gastado {importe}€ en {concepto}")
+        if update.effective_user.id == QUIQUE_ID:  # quique registra un gasto
+            await context.bot.send_message(chat_id=ESTI_ID,
+                                           text=f"ℹ {update.effective_user.first_name} se ha gastado {importe}€ en {concepto}")
+        if update.effective_user.id == ESTI_ID:  # esti registra un gasto
+            await context.bot.send_message(chat_id=QUIQUE_ID,
+                                           text=f"ℹ {update.effective_user.first_name} se ha gastado {importe}€ en {concepto}")
+        context.user_data["concepto"] = None
         return ConversationHandler.END
     except ValueError:
         await update.message.reply_text(f"Por favor, introduce un numero válido")
@@ -314,14 +316,15 @@ async def grabar_concepto_desde_importe(update: Update, context: ContextTypes.DE
                    grupo=GRUPO)
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    text=f"✅ Gasto registrado:\nConcepto: {concepto}\nImporte: {importe}€")
-    logger.info("Nuevo gasto registrado de %s (id:%s): %s %s€", update.effective_user.first_name,
+    logger.info("!!!Nuevo gasto registrado de %s (id:%s): %s %s€", update.effective_user.first_name,
                 update.effective_user.id, concepto, importe)
-    if update.effective_user.id == str(QUIQUE_ID):  # quique registra un gasto
-        context.bot.send_message(chat_id=str(ESTI_ID),
-                                 text=f"{update.effective_user.first_name} se ha gastado {importe}€ en {concepto}")
-    if update.effective_user.id == str(ESTI_ID):  # esti registra un gasto
-        context.bot.send_message(chat_id=str(QUIQUE_ID),
-                                 text=f"{update.effective_user.first_name} se ha gastado {importe}€ en {concepto}")
+    print(update.effective_user.id)
+    if update.effective_user.id == QUIQUE_ID:  # quique registra un gasto
+        await context.bot.send_message(chat_id=ESTI_ID,
+                                       text=f"ℹ {update.effective_user.first_name} se ha gastado {importe}€ en {concepto}")
+    if update.effective_user.id == ESTI_ID:  # esti registra un gasto
+        await context.bot.send_message(chat_id=QUIQUE_ID,
+                                 text=f"ℹ {update.effective_user.first_name} se ha gastado {importe}€ en {concepto}")
 
     context.user_data["importe"] = None
     return ConversationHandler.END
