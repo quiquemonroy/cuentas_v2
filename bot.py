@@ -293,11 +293,11 @@ async def grabar_importe_concepto(update: Update, context: ContextTypes.DEFAULT_
         context.user_data["concepto"] = None
         logger.info("Nuevo gasto registrado de %s (id:%s): %s %s€", update.message.from_user.first_name,
                     update.message.from_user.id, concepto, importe)
-        if update.message.from_user.id == QUIQUE_ID:  # quique registra un gasto
-            context.bot.send_message(chat_id=ESTI_ID,
+        if update.message.from_user.id == str(QUIQUE_ID):  # quique registra un gasto
+            context.bot.send_message(chat_id=str(ESTI_ID),
                                      text=f"{update.message.from_user.first_name} se ha gastado {importe}€ en {concepto}")
-        if update.message.from_user.id == ESTI_ID:  # esti registra un gasto
-            context.bot.send_message(chat_id=QUIQUE_ID,
+        if update.message.from_user.id == str(ESTI_ID):  # esti registra un gasto
+            context.bot.send_message(chat_id=str(QUIQUE_ID),
                                      text=f"{update.message.from_user.first_name} se ha gastado {importe}€ en {concepto}")
         return ConversationHandler.END
     except ValueError:
