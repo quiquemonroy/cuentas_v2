@@ -1,3 +1,4 @@
+import json
 import logging, sqlite3
 from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -47,7 +48,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [
                 InlineKeyboardButton("ℹ️ INFO", callback_data=str(TWO)),
                 InlineKeyboardButton("⚙️ Panel de control", callback_data=str(THREE)),
-                InlineKeyboardButton("📴 Salir", callback_data=str(SIX))
+                InlineKeyboardButton("📴 Mis Gastos", callback_data=str(SIX))
             ],
             [InlineKeyboardButton("📝 Registrar Gasto", callback_data=str(ONE))],
             [InlineKeyboardButton("🎛️ Hacer cuentas", callback_data=str(FOUR))],
@@ -69,7 +70,7 @@ async def start_over(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [
             InlineKeyboardButton("ℹ️ INFO", callback_data=str(TWO)),
             InlineKeyboardButton("⚙️ Panel de control", callback_data=str(THREE)),
-            InlineKeyboardButton("📴 Salir", callback_data=str(SIX))
+            InlineKeyboardButton("📴 Mis Gastos", callback_data=str(SIX))
         ],
         [InlineKeyboardButton("📝 Registrar Gasto", callback_data=str(ONE))],
         [InlineKeyboardButton("🎛️ Hacer cuentas", callback_data=str(FOUR))],
@@ -240,6 +241,34 @@ async def arreglar_cuentas_5(update: Update, context: ContextTypes.DEFAULT_TYPE)
     return END_ROUTES
 
 
+async def mis_gastos_6(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    keyboard = [
+        [
+            InlineKeyboardButton("Arreglar cuentas", callback_data=str(THREE))
+        ],
+        [
+            InlineKeyboardButton("Volver al menu", callback_data=str(ONE)),
+            InlineKeyboardButton("Salir", callback_data=str(TWO))
+        ]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    MONTH, YEAR = datetime.now().strftime("%m"), datetime.now().strftime("%Y")
+    GRUPO = "Familia Culopocho"
+    db = DbManagement(MONTH, YEAR)
+    datos = db.obtener_datos_por_nombre(MONTH, YEAR, update.effective_user.first_name, GRUPO)
+    # print(datos)
+    texto = f"✳️✳️Gastos {update.effective_user.first_name} en {MONTH}-{YEAR}✳️✳️\n\n"
+    lista = [row for row in datos["gastos"]]
+    for i in lista:
+        if i[0] > 0:
+            texto += f"🔴{i[2][:5]}    {i[0]}€     {i[1]}\n"
+    texto += f"----------\n🔸Total:   {datos['total gasto']}€"
+
+    await query.edit_message_text(text=texto, reply_markup=reply_markup)
+    return ARREGLAR_CUENTAS
+
+
 async def confirmar_pago(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -324,7 +353,7 @@ async def grabar_concepto_desde_importe(update: Update, context: ContextTypes.DE
                                        text=f"ℹ {update.effective_user.first_name} se ha gastado {importe}€ en {concepto}")
     if update.effective_user.id == ESTI_ID:  # esti registra un gasto
         await context.bot.send_message(chat_id=QUIQUE_ID,
-                                 text=f"ℹ {update.effective_user.first_name} se ha gastado {importe}€ en {concepto}")
+                                       text=f"ℹ {update.effective_user.first_name} se ha gastado {importe}€ en {concepto}")
 
     context.user_data["importe"] = None
     return ConversationHandler.END
@@ -407,7 +436,8 @@ def main():
                 CallbackQueryHandler(hacer_cuentas_4, pattern="^" + str(FOUR) + "$"),
                 CallbackQueryHandler(arreglar_cuentas_5, pattern="^" + str(FIVE) + "$"),
                 MessageHandler(filters=filters.TEXT & (~filters.COMMAND), callback=obtener_concepto),
-                CallbackQueryHandler(salir, pattern="^" + str(SIX) + "$")
+                # CallbackQueryHandler(salir, pattern="^" + str(SIX) + "$")
+                CallbackQueryHandler(mis_gastos_6, pattern="^" + str(SIX) + "$")
             ],
             END_ROUTES: [
                 CallbackQueryHandler(start_over, pattern="^" + str(ONE) + "$"),
