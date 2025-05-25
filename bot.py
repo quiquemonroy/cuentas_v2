@@ -170,35 +170,29 @@ async def hacer_cuentas_4(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # gastos_por_usuario = {row: f'{datos_gasto["gastos_usuarios"][row]}€' for row in datos_gasto["gastos_usuarios"]}
     gastos_str = ""
     for row in datos_gasto["gastos_usuarios"]:
-        gastos_str += f'Total {row} : {datos_gasto["gastos_usuarios"][row]}€\n'
-    se_debe_str = ""
+        gastos_str += f'🐥{row} : {datos_gasto["gastos_usuarios"][row]}€\n'
+    se_debe_str = "⚫Se bebe a:\n\n"
     for row in datos_gasto["se_debe_a"]:
-        se_debe_str += f'{row[0]} ({row[1]}€)\n'
-    deben_str = ""
+        se_debe_str += f'        ▶️ {row[0]} ({row[1]}€)\n'
+    deben_str = "⚫Debe:\n\n"
     deudas = db.calcular_deudas_detalladas(MONTH, YEAR, GRUPO)
     # print(deudas)
     for row in deudas["deudas"]:
-        deben_str += f'{row[0]} debe a {row[1]} {row[2]}€\n'
-    tabla_gastos = ""  # Inicio del bloque de código monoespaciado
+        deben_str += f'        ⚠️ {row[0]} debe a {row[1]} {row[2]}€\n'
+    tabla_gastos = ""
     for usuario in datos_gasto["usuarios"]:
         datos = db.obtener_datos_por_nombre(MONTH, YEAR, usuario, GRUPO)
-        tabla_gastos += f'{datos["name"]}\n'
-        tabla_gastos += '  {:<8} {:<20} {:<10}\n'.format('GASTO', 'CONCEPTO', 'FECHA')
-        for gasto in datos["gastos"]:
-            if gasto[0] > 0:
-                fecha_formateada = str(gasto[2])[:-14]  # Asumiendo que gasto[2] es la fecha
-                tabla_gastos += '  {:<8} {:<20} {:<10}\n'.format(
-                    f'{gasto[0]}€',
-                    gasto[1],
-                    fecha_formateada
-                )
-    tabla_gastos += "=" * 10 + "\n"  # Línea separadora
-    texto = f"""{tabla_gastos}\nResumen de {MONTH}-{YEAR}: 
+        tabla_gastos += f'✳️{datos["name"]}✳️\n\n'
+        for row in datos["gastos"]:
+            if row[0] > 0:
+                tabla_gastos += f'{row[2][:5]}   {row[0]}€    {row[1]}\n'
+        tabla_gastos += "\n\n"
+
+    tabla_gastos += "✄"+"-" * 10 + "\n"  # Línea separadora
+    texto = f"""{tabla_gastos}\n🟡Resumen de {MONTH}-{YEAR}🟡\n
 {gastos_str}
-Gasto esperado por cada persona: {datos_gasto['gasto_esperado']}€
-Se bebe a:
+⚫Gasto esperado por cada persona:\n      {datos_gasto['gasto_esperado']}€\n
 {se_debe_str}
-Debe:
 {deben_str}"""
 
     await query.edit_message_text(text=texto, reply_markup=reply_markup)
