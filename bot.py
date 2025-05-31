@@ -47,7 +47,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [
             [
                 InlineKeyboardButton("ℹ️ INFO", callback_data=str(TWO)),
-                InlineKeyboardButton("⚙️ Panel de control", callback_data=str(THREE)),
+                InlineKeyboardButton("⚙️ Mes anterior", callback_data=str(THREE)),
                 InlineKeyboardButton("📴 Mis Gastos", callback_data=str(SIX))
             ],
             [InlineKeyboardButton("📝 Registrar Gasto", callback_data=str(ONE))],
@@ -69,7 +69,7 @@ async def start_over(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [
             InlineKeyboardButton("ℹ️ INFO", callback_data=str(TWO)),
-            InlineKeyboardButton("⚙️ Panel de control", callback_data=str(THREE)),
+            InlineKeyboardButton("⚙️ Mes anterior", callback_data=str(THREE)),
             InlineKeyboardButton("📴 Mis Gastos", callback_data=str(SIX))
         ],
         [InlineKeyboardButton("📝 Registrar Gasto", callback_data=str(ONE))],
@@ -137,17 +137,57 @@ async def ayuda_2(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return END_ROUTES
 
 
-async def panel_control_3(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def mes_anterior_3(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    keyboard = [[
-        InlineKeyboardButton("Volver al menu", callback_data=str(ONE)),
-        InlineKeyboardButton("Salir", callback_data=str(TWO))
-    ]]
+    keyboard = [
+        [
+            InlineKeyboardButton("Arreglar cuentas de mes anterior", callback_data=str(THREE))
+        ],
+        [
+            InlineKeyboardButton("Volver al menu", callback_data=str(ONE)),
+            InlineKeyboardButton("Salir", callback_data=str(TWO))
+        ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    texto = """Este es el panel de control, aún está por hacer."""
+    MONTH, YEAR = datetime.now().strftime("%m"), datetime.now().strftime("%Y")
+    MONTH = int(MONTH)-1
+    if len(str(MONTH)) == 1:
+        MONTH = "0"+str(MONTH)
+    GRUPO = "Familia Culopocho"
+    context.user_data['mes anterior'] = MONTH
+    db = DbManagement(MONTH, YEAR)
+    datos_gasto = db.obtener_datos_gasto(MONTH, YEAR, GRUPO)
+    # print(datos)
+    # gastos_por_usuario = {row: f'{datos_gasto["gastos_usuarios"][row]}€' for row in datos_gasto["gastos_usuarios"]}
+    gastos_str = ""
+    for row in datos_gasto["gastos_usuarios"]:
+        gastos_str += f'🐥{row} : {datos_gasto["gastos_usuarios"][row]}€\n'
+    se_debe_str = "⚫Se bebe a:\n\n"
+    for row in datos_gasto["se_debe_a"]:
+        se_debe_str += f'        ▶️ {row[0]} ({row[1]}€)\n'
+    deben_str = "⚫Debe:\n\n"
+    deudas = db.calcular_deudas_detalladas(MONTH, YEAR, GRUPO)
+    # print(deudas)
+    for row in deudas["deudas"]:
+        deben_str += f'        ⚠️ {row[0]} debe a {row[1]} {row[2]}€\n'
+    tabla_gastos = ""
+    for usuario in datos_gasto["usuarios"]:
+        datos = db.obtener_datos_por_nombre(MONTH, YEAR, usuario, GRUPO)
+        tabla_gastos += f'✳️{datos["name"]}✳️\n\n'
+        for row in datos["gastos"]:
+            if row[0] > 0:
+                tabla_gastos += f'{row[2][:5]}   {row[0]}€    {row[1]}\n'
+        tabla_gastos += "\n\n"
+
+    tabla_gastos += "✄" + "-" * 10 + "\n"  # Línea separadora
+    texto = f"""{tabla_gastos}\n🟡Resumen de {MONTH}-{YEAR}🟡\n
+    {gastos_str}
+    ⚫Gasto esperado por cada persona:\n      {datos_gasto['gasto_esperado']}€\n
+    {se_debe_str}
+    {deben_str}"""
+
     await query.edit_message_text(text=texto, reply_markup=reply_markup)
-    return END_ROUTES
+    return ARREGLAR_CUENTAS
 
 
 async def hacer_cuentas_4(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -206,6 +246,10 @@ async def arreglar_cuentas_5(update: Update, context: ContextTypes.DEFAULT_TYPE)
     GRUPO = "Familia Culopocho"
     nombre = update.effective_user.first_name
     db = DbManagement(MONTH, YEAR)
+    try:
+        MONTH = context.user_data['mes anterior']
+    except KeyError:
+        MONTH = MONTH
     datos_gasto = db.calcular_deudas_detalladas(MONTH, YEAR, GRUPO)
     debes = ""
     # print(datos_gasto)
@@ -268,8 +312,13 @@ async def confirmar_pago(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     MONTH, YEAR = datetime.now().strftime("%m"), datetime.now().strftime("%Y")
     GRUPO = "Familia Culopocho"
+
     nombre = update.effective_user.first_name
     db = DbManagement(MONTH, YEAR)
+    try:
+        MONTH = context.user_data['mes anterior']
+    except:
+        MONTH = MONTH
     db.arreglar_cuentas(MONTH, YEAR, nombre, GRUPO)
     if update.effective_user.id == QUIQUE_ID:
         await context.bot.send_message(ESTI_ID, text=f"{nombre} acaba de arreglar las cuentas")
@@ -284,6 +333,8 @@ async def confirmar_pago(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     texto = """Gastos apañados"""
     await query.edit_message_text(text=texto, parse_mode="MarkdownV2", reply_markup=reply_markup)
+    context.user_data['mes anterior'] = None
+
     return END_ROUTES
 
 
@@ -426,7 +477,7 @@ def main():
             START_ROUTES: [
                 CallbackQueryHandler(gasto_1, pattern="^" + str(ONE) + "$"),
                 CallbackQueryHandler(ayuda_2, pattern="^" + str(TWO) + "$"),
-                CallbackQueryHandler(panel_control_3, pattern="^" + str(THREE) + "$"),
+                CallbackQueryHandler(mes_anterior_3, pattern="^" + str(THREE) + "$"),
                 CallbackQueryHandler(hacer_cuentas_4, pattern="^" + str(FOUR) + "$"),
                 CallbackQueryHandler(arreglar_cuentas_5, pattern="^" + str(FIVE) + "$"),
                 MessageHandler(filters=filters.TEXT & (~filters.COMMAND), callback=obtener_concepto),
