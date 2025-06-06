@@ -407,7 +407,7 @@ async def grabar_concepto_desde_importe(update: Update, context: ContextTypes.DE
 async def obtener_concepto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         importe = float(update.message.text.replace(",", "."))
-        if importe > 0:
+        if importe:
             context.user_data['importe'] = importe
             keyboard = [
                 [
